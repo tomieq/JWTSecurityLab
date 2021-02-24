@@ -20,7 +20,30 @@ class WebApplication {
         }
         
         server.notFoundHandler = { request in
-            Logger.error("Unhandled request", "\(request.method) `\(request.path)`")
+            
+            let filePath = Resource.absolutePath(forPublicResource: request.path)
+            if FileManager.default.fileExists(atPath: filePath) {
+                do {
+                   let file = try filePath.openForReading()
+                   let mimeType = filePath.mimeType()
+                   var responseHeader: [String: String] = ["Content-Type": mimeType]
+
+                   let attr = try FileManager.default.attributesOfItem(atPath: filePath)
+                   if let fileSize = attr[FileAttributeKey.size] as? UInt64 {
+                       responseHeader["Content-Length"] = String(fileSize)
+                   }
+
+                   return .raw(200, "OK", responseHeader, { writer in
+                       try writer.write(file)
+                       file.close()
+                   })
+                   
+                } catch {
+                    Logger.error("Unhandled request", "\(request.method) `\(request.path)`")
+                   return .notFound
+                }
+            }
+            Logger.error("Unhandled request", "File `\(filePath)` doesn't exist")
             return .notFound
         }
         
