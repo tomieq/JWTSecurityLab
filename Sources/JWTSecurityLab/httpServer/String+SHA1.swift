@@ -7,6 +7,7 @@
 
 import Foundation
 
+/*
 // swiftlint:disable identifier_name function_body_length
 public struct SHA1 {
 
@@ -124,7 +125,6 @@ public struct SHA1 {
         return ((v << n) & 0xFFFFFFFF) | (v >> (32 - n))
     }
 }
-
 extension String {
 
     public func sha1() -> [UInt8] {
@@ -135,3 +135,4 @@ extension String {
         return self.sha1().reduce("") { $0 + String(format: "%02x", $1) }
     }
 }
+*/
