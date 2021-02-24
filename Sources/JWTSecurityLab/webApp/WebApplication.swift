@@ -7,8 +7,6 @@
 
 import Foundation
 
-let resourcesPath = "/Users/tomieq/bareMetalSwift/fsmMock/Resources/"
-//let resourcesPath = FileManager.default.currentDirectoryPath + String.pathSeparator + "Resources" + String.pathSeparator
 
 class WebApplication {
 
@@ -16,7 +14,12 @@ class WebApplication {
     init(_ server: HttpServer) {
 
         server["/"] = { request in
-            return .notFound
+            
+            let loginTemplate = Template(raw: Resource.getAppResource(relativePath: "templates/loginForm.html"))
+            let template = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
+            template.assign(variables: ["body": loginTemplate.output()])
+            template.assign(variables: ["url" : "/css/login-form.css"], toNest: "css")
+            return .ok(.html(template.output()))
         }
         
         server.notFoundHandler = { request in
