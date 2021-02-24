@@ -19,7 +19,7 @@ class WebApplication {
             let template = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
             template.assign(variables: ["body": loginTemplate.output()])
             template.assign(variables: ["url" : "/css/login-form.css"], toNest: "css")
-            return .ok(.html(template.output()))
+            return template.asResponse(withHeaders: ["Set-Cookie":"session=omg"])
         }
         
         server.notFoundHandler = { request in
