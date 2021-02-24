@@ -8,4 +8,6 @@ JWTSecurityLab consists of a set of lab lessons that will help you understand vu
 
 This app uses:
 1. Modified version of https://github.com/httpswift/swifter
-2. Modified version of https://github.com/kylef/JSONWebToken.swift
+2. https://github.com/krzyzanowskim/CryptoSwift
+3. Modified version of https://github.com/kylef/JSONWebToken.swift
+4. https://github.com/twbs/bootstrap
