@@ -19,7 +19,7 @@ class WebApplication {
             let template = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
             template.assign(variables: ["body": loginTemplate.output()])
             template.assign(variables: ["url" : "/css/login-form.css"], toNest: "css")
-            return template.asResponse(withHeaders: ["Set-Cookie":"session=omg"])
+            return template.asResponse(withHeaders: HttpHeaders().unsetCookie(name: "momo1"))
         }
         
         server.notFoundHandler = { request in
@@ -29,14 +29,14 @@ class WebApplication {
                 do {
                    let file = try filePath.openForReading()
                    let mimeType = filePath.mimeType()
-                   var responseHeader: [String: String] = ["Content-Type": mimeType]
+                    let responseHeaders = HttpHeaders().addHeader("Content-Type", mimeType)
 
                    let attr = try FileManager.default.attributesOfItem(atPath: filePath)
                    if let fileSize = attr[FileAttributeKey.size] as? UInt64 {
-                       responseHeader["Content-Length"] = String(fileSize)
+                    responseHeaders.addHeader("Content-Length", String(fileSize))
                    }
 
-                   return .raw(200, "OK", responseHeader, { writer in
+                   return .raw(200, "OK", responseHeaders, { writer in
                        try writer.write(file)
                        file.close()
                    })

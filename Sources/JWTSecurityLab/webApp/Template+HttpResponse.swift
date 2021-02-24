@@ -8,7 +8,7 @@
 import Foundation
 
 extension Template {
-    func asResponse(withHeaders headers: [String:String] = [:]) -> HttpResponse {
+    func asResponse(withHeaders headers: HttpHeaders? = nil) -> HttpResponse {
         if let data = self.output().data(using: .utf8) {
             return .raw(200, "OK", headers, { writer in
                 try? writer.write(data)
