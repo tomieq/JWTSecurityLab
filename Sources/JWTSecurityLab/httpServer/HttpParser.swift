@@ -37,8 +37,16 @@ public class HttpParser {
             }
             request.body = try readBody(socket, size: contentLengthValue)
         }
+        request.headers["cookie"]?.split(";")
+            .map{ $0.trimmingCharacters(in: .whitespaces) }
+            .map { $0.split("=") }
+            .forEach { data in
+                if data.count > 1, let value = data[1].split(";").first?.trimmingCharacters(in: .whitespaces) {
+                    request.cookies[data[0]] = value
+                }
+            }
         return request
-        }
+    }
 
     private func readBody(_ socket: Socket, size: Int) throws -> [UInt8] {
         return try socket.read(length: size)
