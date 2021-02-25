@@ -41,8 +41,8 @@ public class HttpParser {
             .map{ $0.trimmingCharacters(in: .whitespaces) }
             .map { $0.split("=") }
             .forEach { data in
-                if data.count > 1, let value = data[1].split(";").first?.trimmingCharacters(in: .whitespaces) {
-                    request.cookies[data[0]] = value
+                if data.count > 1 {
+                    request.cookies[data[0]] = data[1]
                 }
             }
         return request
