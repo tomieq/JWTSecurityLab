@@ -10,11 +10,36 @@
     [START css]<link href="{url}" rel="stylesheet">
     [END css]
 
-    <title>Hello, world!</title>
+    <title>{title}</title>
   </head>
   
   <body>
-    <div class="container">
+    <div class="container-fluid px-0">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <strong class="navbar-brand">JWTSecurityLab</strong>
+                <span class="navbar-text">
+                  Security playground for learning JWT vulnerabilities
+                </span>
+            </div>
+        </nav>
+    </div>
+    <div class="container mt-3">
+        [START error]
+        <div class="alert alert-danger" role="alert">
+            {message}
+        </div>
+        [END error]
+        [START success]
+        <div class="alert alert-success" role="alert">
+            {message}
+        </div>
+        [END success]
+        [START info]
+        <div class="alert alert-info" role="alert">
+            {message}
+        </div>
+        [END info]
         {body}
     </div>
 
