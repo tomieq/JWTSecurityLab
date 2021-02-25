@@ -22,6 +22,7 @@ class WebApplication {
         server["/lab1"] = { request in
             
             let cookieName = "lab1_cookie"
+            // answer = eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.
             
             let template = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
             let loginTemplate = Template(raw: Resource.getAppResource(relativePath: "templates/loginForm.html"))
