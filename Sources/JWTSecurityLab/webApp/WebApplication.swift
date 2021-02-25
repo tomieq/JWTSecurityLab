@@ -24,11 +24,11 @@ class WebApplication {
             let cookieName = "lab1_cookie"
             // answer = eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.
             
-            let template = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
-            let loginTemplate = Template(raw: Resource.getAppResource(relativePath: "templates/loginForm.html"))
-            template.set(variables: ["title":"Lab 1: CVE-2020-15957"])
-            template.set(variables: ["url":"/css/login-form.css"], inNest: "css")
+            let page = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
+            page.set(variables: ["title":"Lab 1: CVE-2020-15957"])
+            page.set(variables: ["url":"/css/login-form.css"], inNest: "css")
             
+            let loginTemplate = Template(raw: Resource.getAppResource(relativePath: "templates/loginForm.html"))
             let instructions = Template(raw: Resource.getAppResource(relativePath: "templates/lab1Instructions.html"))
             loginTemplate.set(variables: ["instructions":instructions.output()])
             
@@ -43,7 +43,7 @@ class WebApplication {
                     do {
                         authorizedLogin = try JWTdecode(token, algorithm: .none).claims["user"] as? String
                     } catch {
-                        template.set(variables: ["message":"Failed to decode JWT: \(error)"], inNest: "error")
+                        page.set(variables: ["message":"Failed to decode JWT: \(error)"], inNest: "error")
                     }
                 }
             }
@@ -57,30 +57,30 @@ class WebApplication {
                             headers.setCookie(name: cookieName, value: token + ";Max-Age=3000; HttpOnly, Secure")
                             authorizedLogin = login
                         } else {
-                            template.set(variables: ["message":"Invalid password for user <b>\(login)</b>."], inNest: "error")
+                            page.set(variables: ["message":"Invalid password for user <b>\(login)</b>."], inNest: "error")
                         }
                     } else {
-                        template.set(variables: ["message":"User <b>\(login)</b> does't exist."], inNest: "error")
+                        page.set(variables: ["message":"User <b>\(login)</b> does't exist."], inNest: "error")
                     }
             } else if let _ = (formData.first { $0.0 == "logout" }.map { $0.1 }) {
                 headers.unsetCookie(name: cookieName)
-                template.set(variables: ["message":"Successfully signed out."], inNest: "success")
+                page.set(variables: ["message":"Successfully signed out."], inNest: "success")
                 authorizedLogin = nil
             }
             
             if let login = authorizedLogin, ["jim", "admin"].contains(login) {
                 loginTemplate.set(variables: ["login":login], inNest: "authorized")
                 if login == "admin" {
-                    template.set(variables: ["message":"Job well done! Contratulations. You have taken over admin's account!"], inNest: "success")
+                    page.set(variables: ["message":"Job well done! Contratulations. You have taken over admin's account!"], inNest: "success")
                 } else {
-                    template.set(variables: ["message":"Successfully logged as \(login). Now your task is to breach the security and authenticate as admin."], inNest: "info")
+                    page.set(variables: ["message":"Successfully logged as \(login). Now your task is to breach the security and authenticate as admin."], inNest: "info")
                 }
             } else {
                 loginTemplate.set(variables: nil, inNest: "unauthorized")
             }
             
-            template.set(variables: ["body": loginTemplate.output()])
-            return template.asResponse(withHeaders: headers)
+            page.set(variables: ["body": loginTemplate.output()])
+            return page.asResponse(withHeaders: headers)
         }
         
         server.notFoundHandler = { request in
