@@ -69,7 +69,7 @@ class Template {
         return "{nest-\(name)}"
     }
     
-    func assign(variables: [String:String]?, toNest nestName: String) {
+    func set(variables: [String:String]?, inNest nestName: String) {
         if let nestContent = self.nestedContent[nestName] {
             var content = "\(nestContent)"
             variables?.forEach { variable in
@@ -80,7 +80,7 @@ class Template {
         }
     }
     
-    func assign(variables: [String:String]) {
+    func set(variables: [String:String]) {
         variables.forEach { variable in
             self.content = self.content.replacingOccurrences(of: "{\(variable.key)}", with: variable.value)
         }

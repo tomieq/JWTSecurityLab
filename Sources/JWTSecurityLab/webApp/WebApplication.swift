@@ -26,11 +26,11 @@ class WebApplication {
             
             let template = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
             let loginTemplate = Template(raw: Resource.getAppResource(relativePath: "templates/loginForm.html"))
-            template.assign(variables: ["title":"Lab 1: CVE-2020-15957"])
-            template.assign(variables: ["url":"/css/login-form.css"], toNest: "css")
+            template.set(variables: ["title":"Lab 1: CVE-2020-15957"])
+            template.set(variables: ["url":"/css/login-form.css"], inNest: "css")
             
             let instructions = Template(raw: Resource.getAppResource(relativePath: "templates/lab1Instructions.html"))
-            loginTemplate.assign(variables: ["instructions":instructions.output()])
+            loginTemplate.set(variables: ["instructions":instructions.output()])
             
             let headers = HttpHeaders()
             var authorizedLogin: String?
@@ -43,7 +43,7 @@ class WebApplication {
                     do {
                         authorizedLogin = try JWTdecode(token, algorithm: .none).claims["user"] as? String
                     } catch {
-                        template.assign(variables: ["message":"Failed to decode JWT: \(error)"], toNest: "error")
+                        template.set(variables: ["message":"Failed to decode JWT: \(error)"], inNest: "error")
                     }
                 }
             }
@@ -57,29 +57,29 @@ class WebApplication {
                             headers.setCookie(name: cookieName, value: token + ";Max-Age=3000; HttpOnly, Secure")
                             authorizedLogin = login
                         } else {
-                            template.assign(variables: ["message":"Invalid password for user <b>\(login)</b>."], toNest: "error")
+                            template.set(variables: ["message":"Invalid password for user <b>\(login)</b>."], inNest: "error")
                         }
                     } else {
-                        template.assign(variables: ["message":"User <b>\(login)</b> does't exist."], toNest: "error")
+                        template.set(variables: ["message":"User <b>\(login)</b> does't exist."], inNest: "error")
                     }
             } else if let _ = (formData.first { $0.0 == "logout" }.map { $0.1 }) {
                 headers.unsetCookie(name: cookieName)
-                template.assign(variables: ["message":"Successfully signed out."], toNest: "success")
+                template.set(variables: ["message":"Successfully signed out."], inNest: "success")
                 authorizedLogin = nil
             }
             
             if let login = authorizedLogin, ["jim", "admin"].contains(login) {
-                loginTemplate.assign(variables: ["login":login], toNest: "authorized")
+                loginTemplate.set(variables: ["login":login], inNest: "authorized")
                 if login == "admin" {
-                    template.assign(variables: ["message":"Job well done! Contratulations. You have taken over admin's account!"], toNest: "success")
+                    template.set(variables: ["message":"Job well done! Contratulations. You have taken over admin's account!"], inNest: "success")
                 } else {
-                    template.assign(variables: ["message":"Successfully logged as \(login). Now your task is to breach the security and authenticate as admin."], toNest: "info")
+                    template.set(variables: ["message":"Successfully logged as \(login). Now your task is to breach the security and authenticate as admin."], inNest: "info")
                 }
             } else {
-                loginTemplate.assign(variables: nil, toNest: "unauthorized")
+                loginTemplate.set(variables: nil, inNest: "unauthorized")
             }
             
-            template.assign(variables: ["body": loginTemplate.output()])
+            template.set(variables: ["body": loginTemplate.output()])
             return template.asResponse(withHeaders: headers)
         }
         
