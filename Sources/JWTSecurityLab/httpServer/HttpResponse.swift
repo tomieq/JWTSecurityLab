@@ -132,7 +132,7 @@ public enum HttpResponse {
         let headers = HttpHeaders().addHeader("Server", "Swiftd")
         switch self {
         case .switchProtocols(let switchHeaders, _):
-            switchHeaders.storage.forEach { header in
+            switchHeaders.raw.forEach { header in
                 headers.addHeader(header.name, header.value)
             }
         case .ok(let body):
@@ -148,7 +148,7 @@ public enum HttpResponse {
             headers.addHeader("Location", location)
         case .raw(_, _, let rawHeaders, _):
             if let rawHeaders = rawHeaders {
-                rawHeaders.storage.forEach { header in
+                rawHeaders.raw.forEach { header in
                     headers.addHeader(header.name, header.value)
                 }
             }

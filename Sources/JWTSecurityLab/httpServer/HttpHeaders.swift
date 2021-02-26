@@ -8,7 +8,10 @@
 import Foundation
 
 public class HttpHeaders {
-    var storage: [(name: String, value: String)] = []
+    private var storage: [(name: String, value: String)] = []
+    var raw: [(name: String, value: String)] {
+        return self.storage
+    }
     
     @discardableResult
     func addHeader(_ name: String, _ value: String) -> HttpHeaders {
