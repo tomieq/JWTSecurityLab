@@ -6,7 +6,7 @@
         <div class="account-wall">
             [START unauthorized]
             <img class="profile-img" src="/images/user.png" alt="">
-            <form class="form-signin" method="post" action="/lab1">
+            <form class="form-signin" method="post" action="{path}">
             <input type="text" class="form-control" placeholder="Login" name="login" required autofocus>
             <input type="password" class="form-control" placeholder="Password" name="password" required>
             <div class="col-12 text-center">
@@ -17,7 +17,7 @@
             [START authorized]
             <img class="profile-img" src="/images/{login}.png" alt="">
             <h4 class="text-center">Welcome <strong>{login}</strong></h4>
-            <form class="form-signin" method="post" action="/lab1">
+            <form class="form-signin" method="post" action="{path}">
             <input type="hidden" name="logout" value="do">
             <div class="col-12 text-center">
                 <button class="btn btn-lg btn-primary" type="submit">Sign out</button>

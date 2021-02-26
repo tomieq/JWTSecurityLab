@@ -1,0 +1,16 @@
+<h3>Lab class 2: modifying claims and reading errors on UI</h3>
+<p><small>
+Authorization in this window is vulnerable to <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-CVE-2019-7644" target=_blank>CVE-2019-7644</a>.
+You can easily escalate user's privileges. If you know any user's credentials, your can become "admin" without knowing the admin's password.
+</small></p>
+<p><small>Just sign in as "jim" with password "12345". Watch the cookies. You will find that one of the cookies stores JWT data.
+If you decode the claim part, you will see that it carries the login of currently authenticated user.
+What happens if you manipulate value of field "user"? <strong>Read carefully error messages that appear on this page after cookie modification as they can be very useful!</strong>
+For JWT manipulation use <a href="https://jwt.io/" target=_blank>jwt.io</a>. Rember that JWT is base64Url, not base64!
+Be pentester! Authenticate yourself as admin without knowing the password.
+For manipulating cookie value use either browser's "Developer tools" or any browser's extension e.g. <a href="https://chrome.google.com/webstore/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg" target=_blank>EditThisCookie</a>
+</small></p>
+<p><small>
+Presented on this page authorization process is for demostration purposees only, but remember that there are real apps with this vulnerability
+in the wildness of internet. Make sure your app is secure! Learn how to test against CVE-2020-15957.
+</small></p>
