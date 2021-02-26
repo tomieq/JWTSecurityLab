@@ -10,12 +10,13 @@ import Foundation
 
 class WebApplication {
 
+    private let rawPage = Resource.getAppResource(relativePath: "templates/pageResponse.html")
     
     init(_ server: HttpServer) {
 
         server.GET["/"] = { request in
             
-            let template = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
+            let template = Template(raw: self.rawPage)
             return template.asResponse()
         }
         
@@ -25,12 +26,12 @@ class WebApplication {
             let secret = "secret".data(using: .utf8)!
             // answer = eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.
             
-            let page = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
+            let page = Template(raw: self.rawPage)
             page.set(variables: ["title":"Lab 1: CVE-2020-15957"])
             page.set(variables: ["url":"/css/login-form.css"], inNest: "css")
             
-            let loginTemplate = Template(raw: Resource.getAppResource(relativePath: "templates/loginForm.html"))
-            let instructions = Template(raw: Resource.getAppResource(relativePath: "templates/lab1Instructions.html"))
+            let loginTemplate = Template(from: "templates/loginForm.html")
+            let instructions = Template(from: "templates/lab1Instructions.html")
             loginTemplate.set(variables: ["instructions":instructions.output()])
             
             let headers = HttpHeaders()
@@ -92,12 +93,12 @@ class WebApplication {
             let cookieName = "lab2_cookie"
             let secret = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9".data(using: .utf8)!
             
-            let page = Template(raw: Resource.getAppResource(relativePath: "templates/pageResponse.html"))
+            let page = Template(raw: self.rawPage)
             page.set(variables: ["title":"Lab 2: CVE-2019-7644"])
             page.set(variables: ["url":"/css/login-form.css"], inNest: "css")
             
-            let loginTemplate = Template(raw: Resource.getAppResource(relativePath: "templates/loginForm.html"))
-            let instructions = Template(raw: Resource.getAppResource(relativePath: "templates/lab2Instructions.html"))
+            let loginTemplate = Template(from: "templates/loginForm.html")
+            let instructions = Template(from: "templates/lab2Instructions.html")
             loginTemplate.set(variables: ["instructions":instructions.output()])
             
             let headers = HttpHeaders()

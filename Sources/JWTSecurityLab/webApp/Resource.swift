@@ -15,6 +15,7 @@ class Resource {
     static func getAppResource(relativePath: String) -> String {
         let url = URL(fileURLWithPath: Resource.absolutePath(forAppResource: relativePath))
         do {
+            Logger.info("Resource", "Loading \(relativePath)")
             return try String(contentsOf: url)
         } catch {
             Logger.error("Resource", "Error loading app resource from \(url.absoluteString)")
