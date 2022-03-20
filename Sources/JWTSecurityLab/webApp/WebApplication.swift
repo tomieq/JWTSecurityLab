@@ -163,25 +163,23 @@ class WebApplication {
             
             let filePath = Resource.absolutePath(forPublicResource: request.path)
             if FileManager.default.fileExists(atPath: filePath) {
-                do {
-                   let file = try filePath.openForReading()
-                   let mimeType = filePath.mimeType()
-                    let responseHeaders = HttpHeaders().addHeader("Content-Type", mimeType)
 
-                   let attr = try FileManager.default.attributesOfItem(atPath: filePath)
-                   if let fileSize = attr[FileAttributeKey.size] as? UInt64 {
-                    responseHeaders.addHeader("Content-Length", String(fileSize))
-                   }
-
-                   return .raw(200, "OK", responseHeaders, { writer in
-                       try writer.write(file)
-                       file.close()
-                   })
-                   
-                } catch {
-                    Logger.error("Unhandled request", "\(request.method) `\(request.path)`")
-                   return .notFound
+                guard let file = try? filePath.openForReading() else {
+                    Logger.error("File", "Could not open `\(filePath)`")
+                    return .notFound
                 }
+                let mimeType = filePath.mimeType()
+                let responseHeaders = HttpHeaders().addHeader("Content-Type", mimeType)
+
+                if let attr = try? FileManager.default.attributesOfItem(atPath: filePath),
+                    let fileSize = attr[FileAttributeKey.size] as? UInt64 {
+                    responseHeaders.addHeader("Content-Length", String(fileSize))
+                }
+
+                return .raw(200, "OK", responseHeaders, { writer in
+                    try writer.write(file)
+                    file.close()
+                })
             }
             Logger.error("Unhandled request", "File `\(filePath)` doesn't exist")
             return .notFound
