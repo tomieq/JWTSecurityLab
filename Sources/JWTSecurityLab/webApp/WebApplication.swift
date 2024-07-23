@@ -21,6 +21,15 @@ class WebApplication {
     private var bodyTemplate: Template {
         Template.load(relativePath: "templates/pageResponse.html")
     }
+    private func claims(_ request: HttpRequest) -> ClaimSet {
+        var claims = ClaimSet()
+        claims.notBefore = Date()
+        claims.expiration = Date().addingTimeInterval(60 * 60)
+        claims["path"] = request.path
+        claims["requestID"] = request.id.uuidString
+        claims["now"] = Date().jwt
+        return claims
+    }
     
     init(_ server: HttpServer) {
 
@@ -63,14 +72,8 @@ class WebApplication {
                let password = request.formData.get("password") {
                     if ["jim", "admin"].contains(login) {
                         if login == "jim", password == "12345" {
-                            let claims = [
-                                "clientIP": request.peerName ?? "",
-                                "user": login,
-                                "path": request.path,
-                                "requestID": request.id.uuidString,
-                                "validFrom": Date().jwt,
-                                "validTo": Date().addingTimeInterval(60 * 60).jwt
-                            ]
+                            var claims = self.claims(request)
+                            claims["user"] = login
                             let token = JWTencode(claims: claims, algorithm: .hs256(secret))
                             responseHeaders.setCookie(name: cookieName, value: token)
                             authorizedLogin = login
@@ -143,7 +146,9 @@ class WebApplication {
                let password = request.formData.get("password") {
                     if ["jim", "admin"].contains(login) {
                         if login == "jim", password == "12345" {
-                            let token = JWTencode(claims: ["user": login], algorithm: .hs256(secret))
+                            var claims = self.claims(request)
+                            claims["user"] = login
+                            let token = JWTencode(claims: claims, algorithm: .hs256(secret))
                             responseHeaders.setCookie(name: cookieName, value: token)
                             authorizedLogin = login
                         } else {
