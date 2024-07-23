@@ -6,38 +6,47 @@
 //
 
 import Foundation
+import Swifter
+import Template
+import BootstrapTemplate
 
 
 class WebApplication {
 
-    private let rawPage = Resource.getAppResource(relativePath: "templates/pageResponse.html")
+    private var mainTemplate: Template {
+        let template = Template.load(absolutePath: BootstrapTemplate.absolutePath(for: "templates/index.tpl.html")!)
+        template.assign(["url": "css/login-form.css"], inNest: "css")
+        return template
+    }
+    private var bodyTemplate: Template {
+        Template.load(relativePath: "templates/pageResponse.html")
+    }
     
     init(_ server: HttpServer) {
 
-        server.GET["/"] = { request in
-            
-            let template = Template(raw: self.rawPage)
-            return template.asResponse()
+        server.get["/"] = { [unowned self] request, _ in
+            let page = self.bodyTemplate
+            page.assign("body", "You are connected. Let's wait for others")
+            return .ok(.html(self.mainTemplate.assign("body", page)))
         }
         
-        server["/lab1"] = { request in
+        server["/lab1"] = { [unowned self] request, responseHeaders in
             
             let cookieName = "lab1_cookie"
             let secret = "secret".data(using: .utf8)!
             // answer = eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.
             
-            let page = Template(raw: self.rawPage)
-            page.set(variables: ["title":"Lab 1: CVE-2020-15957"])
-            page.set(variables: ["url":"/css/login-form.css"], inNest: "css")
+            let page = self.bodyTemplate
+            page.assign("title", "Lab 1: CVE-2020-15957")
+            page.assign(["url":"/css/login-form.css"], inNest: "css")
             
-            let loginTemplate = Template(from: "templates/loginForm.html")
-            let instructions = Template(from: "templates/lab1Instructions.html")
-            loginTemplate.set(variables: ["instructions":instructions.output()])
+            let loginTemplate = Template.load(relativePath: "templates/loginForm.html")
+            let instructions = Template.load(relativePath: "templates/lab1Instructions.html")
+            loginTemplate.assign("instructions", instructions)
             
-            let headers = HttpHeaders()
             var authorizedLogin: String?
             
-            if let token = request.cookies[cookieName] {
+            if let token = request.cookies.get(cookieName) {
                 do {
                     authorizedLogin = try JWTdecode(token, algorithm: .hs256(secret)).claims["user"] as? String
                 } catch {
@@ -45,151 +54,143 @@ class WebApplication {
                     do {
                         authorizedLogin = try JWTdecode(token, algorithm: .none).claims["user"] as? String
                     } catch {
-                        page.set(variables: ["message":"Failed to decode JWT: \(error)"], inNest: "error")
+                        page.assign(["message":"Failed to decode JWT: \(error)"], inNest: "error")
                     }
                 }
             }
             
-            let formData = request.parseUrlencodedForm()
-            if let login = (formData.first { $0.0 == "login" }.map { $0.1 }),
-                let password = (formData.first { $0.0 == "password" }.map { $0.1 }) {
+            if let login = request.formData.get("login"),
+               let password = request.formData.get("password") {
                     if ["jim", "admin"].contains(login) {
                         if login == "jim", password == "12345" {
-                            let token = JWTencode(claims: ["user": login], algorithm: .hs256(secret))
-                            headers.setCookie(name: cookieName, value: token)
+                            let claims = [
+                                "clientIP": request.peerName ?? "",
+                                "user": login,
+                                "path": request.path,
+                                "requestID": request.id.uuidString,
+                                "validFrom": Date().jwt,
+                                "validTo": Date().addingTimeInterval(60 * 60).jwt
+                            ]
+                            let token = JWTencode(claims: claims, algorithm: .hs256(secret))
+                            responseHeaders.setCookie(name: cookieName, value: token)
                             authorizedLogin = login
                         } else {
-                            let errorMsg = String(format: "Invalid password for user %@.", Template.htmlNode(type: "b", content: login))
-                            page.set(variables: ["message":errorMsg], inNest: "error")
+                            let errorMsg = String(format: "Invalid password for user <b>%@</b>.",  login)
+                            page.assign(["message":errorMsg], inNest: "error")
                         }
                     } else {
-                        let errorMsg = String(format: "User %@ does't exist.", Template.htmlNode(type: "b", content: login))
-                        page.set(variables: ["message":errorMsg], inNest: "error")
+                        let errorMsg = String(format: "User <b>%@</b> does't exist.", login)
+                        page.assign(["message":errorMsg], inNest: "error")
                     }
-            } else if let _ = (formData.first { $0.0 == "logout" }.map { $0.1 }) {
-                headers.unsetCookie(name: cookieName)
-                page.set(variables: ["message":"Successfully signed out."], inNest: "success")
+            } else if let _ = request.formData.get("logout"){
+                responseHeaders.unsetCookie(name: cookieName)
+                page.assign(["message":"Successfully signed out."], inNest: "success")
                 authorizedLogin = nil
             }
             
             if let login = authorizedLogin, ["jim", "admin"].contains(login) {
-                loginTemplate.set(variables: ["path":request.path,"login":login], inNest: "authorized")
+                loginTemplate.assign(["path":request.path,"login":login], inNest: "authorized")
                 if login == "admin" {
-                    page.set(variables: ["message":"Job well done! Contratulations. You have taken over admin's account!"], inNest: "success")
+                    page.assign(["message":"Job well done! Contratulations. You have taken over admin's account!"], inNest: "success")
                 } else {
-                    let msg = String(format: "Successfully logged as %@. Now your task is to breach the security and authenticate as admin.", Template.htmlNode(type: "b", content: login))
-                    page.set(variables: ["message":msg], inNest: "info")
+                    let msg = String(format: "Successfully logged as <b>%@</b>. Now your task is to breach the security and authenticate as admin.", login)
+                    page.assign(["message":msg], inNest: "info")
                 }
             } else {
-                loginTemplate.set(variables: ["path":request.path], inNest: "unauthorized")
+                loginTemplate.assign(["path":request.path], inNest: "unauthorized")
             }
             
-            page.set(variables: ["body": loginTemplate.output()])
-            return page.asResponse(withHeaders: headers)
+            page.assign("body", loginTemplate)
+            return .ok(.html(self.mainTemplate.assign("body", page)))
         }
         
-        server["/lab2"] = { request in
+        server["/lab2"] = { [unowned self] request, responseHeaders in
             
             let cookieName = "lab2_cookie"
             let secret = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9".data(using: .utf8)!
             
-            let page = Template(raw: self.rawPage)
-            page.set(variables: ["title":"Lab 2: CVE-2019-7644"])
-            page.set(variables: ["url":"/css/login-form.css"], inNest: "css")
+            let page = self.bodyTemplate
+            page.assign("title", "Lab 2: CVE-2019-7644")
+            page.assign(["url":"/css/login-form.css"], inNest: "css")
             
-            let loginTemplate = Template(from: "templates/loginForm.html")
-            let instructions = Template(from: "templates/lab2Instructions.html")
-            loginTemplate.set(variables: ["instructions":instructions.output()])
+            let loginTemplate = Template.load(relativePath: "templates/loginForm.html")
+            let instructions = Template.load(relativePath: "templates/lab2Instructions.html")
+            loginTemplate.assign("instructions", instructions)
             
-            let headers = HttpHeaders()
             var authorizedLogin: String?
             
+            func html(_ txt: String) -> String {
+                "<span class='fw-light'>\(txt)</span>"
+            }
             if let token = request.cookies[cookieName] {
                 do {
                     authorizedLogin = try JWTdecode(token, algorithm: .hs256(secret)).claims["user"] as? String
                 } catch {
                     // simulated bahaviour of CVE-2019-7644
-                    let tokenParts = token.split(".")
+                    let tokenParts = token.split(separator: ".").map{ "\($0)" }
                     if tokenParts.count == 3, let base = "\(tokenParts[0]).\(tokenParts[1])".data(using: .utf8) {
                         let alg = Algorithm.hs256(secret)
                         let signature = base64encode(alg.algorithm.sign(base))
-                        let errorMsg = String(format: "Invalid signature. Expected %@ got %@",
-                                              Template.htmlNode(type: "span", attributes: ["class":"fw-light"], content: signature),
-                                              Template.htmlNode(type: "span", attributes: ["class":"fw-light"], content: tokenParts[2]))
-                        page.set(variables: ["message":errorMsg], inNest: "error")
+                        let errorMsg = String(format: "Invalid signature. Expected <b>%@</b> got <b>%@</b>",
+                                              html(signature),
+                                              html(tokenParts[2]))
+                        page.assign(["message":errorMsg], inNest: "error")
                     }
                 }
             }
             
-            let formData = request.parseUrlencodedForm()
-            if let login = (formData.first { $0.0 == "login" }.map { $0.1 }),
-                let password = (formData.first { $0.0 == "password" }.map { $0.1 }) {
+            if let login = request.formData.get("login"),
+               let password = request.formData.get("password") {
                     if ["jim", "admin"].contains(login) {
                         if login == "jim", password == "12345" {
                             let token = JWTencode(claims: ["user": login], algorithm: .hs256(secret))
-                            headers.setCookie(name: cookieName, value: token)
+                            responseHeaders.setCookie(name: cookieName, value: token)
                             authorizedLogin = login
                         } else {
-                            let errorMsg = String(format: "Invalid password for user %@.", Template.htmlNode(type: "b", content: login))
-                            page.set(variables: ["message":errorMsg], inNest: "error")
+                            let errorMsg = String(format: "Invalid password for user <b>%@</b>.", login)
+                            page.assign(["message":errorMsg], inNest: "error")
                         }
                     } else {
-                        let errorMsg = String(format: "User %@ does't exist.", Template.htmlNode(type: "b", content: login))
-                        page.set(variables: ["message":errorMsg], inNest: "error")
+                        let errorMsg = String(format: "User <b>%@</b> does't exist.", login)
+                        page.assign(["message":errorMsg], inNest: "error")
                     }
-            } else if let _ = (formData.first { $0.0 == "logout" }.map { $0.1 }) {
-                headers.unsetCookie(name: cookieName)
-                page.set(variables: ["message":"Successfully signed out."], inNest: "success")
+            } else if let _ = request.formData.get("logout") {
+                responseHeaders.unsetCookie(name: cookieName)
+                page.assign(["message":"Successfully signed out."], inNest: "success")
                 authorizedLogin = nil
             }
             
             if let login = authorizedLogin, ["jim", "admin"].contains(login) {
-                loginTemplate.set(variables: ["login":login], inNest: "authorized")
+                loginTemplate.assign(["login":login], inNest: "authorized")
                 if login == "admin" {
-                    page.set(variables: ["message":"Job well done! Contratulations. You have taken over admin's account!"], inNest: "success")
+                    page.assign(["message":"Job well done! Contratulations. You have taken over admin's account!"], inNest: "success")
                 } else {
-                    let msg = String(format: "Successfully logged as %@. Now your task is to breach the security and authenticate as admin.", Template.htmlNode(type: "b", content: login))
-                    page.set(variables: ["message":msg], inNest: "info")
+                    let msg = String(format: "Successfully logged as <b>%@</b>. Now your task is to breach the security and authenticate as admin.", login)
+                    page.assign(["message":msg], inNest: "info")
                 }
             } else {
-                loginTemplate.set(variables: nil, inNest: "unauthorized")
+                loginTemplate.assign([:], inNest: "unauthorized")
             }
             
-            page.set(variables: ["body": loginTemplate.output()])
-            return page.asResponse(withHeaders: headers)
+            page.assign("body", loginTemplate)
+            return .ok(.html(self.mainTemplate.assign("body", page)))
         }
         
-        server.notFoundHandler = { request in
-            
-            let filePath = Resource.absolutePath(forPublicResource: request.path)
-            if FileManager.default.fileExists(atPath: filePath) {
-                do {
-                   let file = try filePath.openForReading()
-                   let mimeType = filePath.mimeType()
-                    let responseHeaders = HttpHeaders().addHeader("Content-Type", mimeType)
-
-                   let attr = try FileManager.default.attributesOfItem(atPath: filePath)
-                   if let fileSize = attr[FileAttributeKey.size] as? UInt64 {
-                    responseHeaders.addHeader("Content-Length", String(fileSize))
-                   }
-
-                   return .raw(200, "OK", responseHeaders, { writer in
-                       try writer.write(file)
-                       file.close()
-                   })
-                   
-                } catch {
-                    Logger.error("Unhandled request", "\(request.method) `\(request.path)`")
-                   return .notFound
-                }
+        server.notFoundHandler = { request, _ in
+            // serve Bootstrap static files
+            if let filePath = BootstrapTemplate.absolutePath(for: request.path) {
+                try HttpFileResponse.with(absolutePath: filePath)
             }
-            Logger.error("Unhandled request", "File `\(filePath)` doesn't exist")
-            return .notFound
+            try HttpFileResponse.with(absolutePath: Resource().absolutePath(for: request.path))
+            return .notFound(.text("Page not found"))
         }
         
-        server.middleware.append { request in
-            Logger.info("Incoming request", "\(request.method) \(request.path)")
+        server.middleware.append( { request, header in
+            print("Request \(request.id) \(request.method) \(request.path) from \(request.peerName ?? "")")
+            request.onFinished = { id, code, duration in
+                print("Request \(id) finished with \(code) in \(String(format: "%.3f", duration)) seconds")
+            }
             return nil
-        }
+        })
     }
 }

@@ -1,5 +1,6 @@
 import Dispatch
 import Foundation
+import Swifter
 
 let server = HttpServer()
 let application = WebApplication(server)
