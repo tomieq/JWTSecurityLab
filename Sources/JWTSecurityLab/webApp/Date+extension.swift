@@ -17,3 +17,13 @@ extension Date {
         return formater.string(from: self)
     }
 }
+
+extension Date {
+    var readable: String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        dateFormatter.calendar = Calendar(identifier: .iso8601)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        return dateFormatter.string(from: self)
+    }
+}

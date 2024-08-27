@@ -73,3 +73,13 @@
     display: block;
     margin-top: 10px;
 }
+.avatar-sm
+{
+    width: 72px;
+    height: 72px;
+    margin: 0;
+    display: block;
+    -moz-border-radius: 50%;
+    -webkit-border-radius: 50%;
+    border-radius: 50%;
+}

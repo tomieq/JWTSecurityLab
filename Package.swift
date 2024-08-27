@@ -5,9 +5,9 @@ import PackageDescription
 let package = Package(
     name: "JWTSecurityLab",
     dependencies: [
-        .package(url: "https://github.com/tomieq/BootstrapStarter", branch: "master"),
-        .package(url: "https://github.com/tomieq/swifter", branch: "develop"),
-        .package(url: "https://github.com/tomieq/Template.swift.git", exact: "1.4.0")
+        .package(url: "https://github.com/tomieq/BootstrapStarter", from: "1.0.0"),
+        .package(url: "https://github.com/tomieq/swifter", from: "2.0.3"),
+        .package(url: "https://github.com/tomieq/Template.swift.git", from: "1.5.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

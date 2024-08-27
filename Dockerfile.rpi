@@ -2,7 +2,7 @@ FROM swift:5.9 as builder
 WORKDIR /app
 COPY . .
 RUN swift build -c release 
-RUN echo $(ls -la .build/x86_64-unknown-linux-gnu/release)
+RUN echo $(ls -la .build/aarch64-unknown-linux-gnu/release)
 
 
 FROM swift:5.9-slim
@@ -10,13 +10,13 @@ RUN apt-get update -y
 RUN apt-get install -y file
 WORKDIR /app
 # first copy everything to temp directory
-COPY --from=builder /app/.build/x86_64-unknown-linux-gnu/release/ ./tmp/
+COPY --from=builder /app/.build/aarch64-unknown-linux-gnu/release/ ./tmp/
 # move resources only(linux bundles) to destination
 RUN cp -R ./tmp/*.resources .
 # remove tmp
 RUN rm -rf ./tmp
 # now copy your app
-COPY --from=builder /app/.build/x86_64-unknown-linux-gnu/release/JWTSecurityLab .
+COPY --from=builder /app/.build/aarch64-unknown-linux-gnu/release/JWTSecurityLab .
 # and app's own resources (if any)
 COPY Resources /app/Resources
 CMD ["./JWTSecurityLab"]
